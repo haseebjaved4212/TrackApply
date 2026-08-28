@@ -1,0 +1,40 @@
+Act as a senior full stack engineer. Build a complete, production-quality full stack web app called "Job Application Tracker with Auto-Parsing." Build it fully, backend and frontend, with real working code, not placeholders or TODOs.
+
+APP PURPOSE:
+Users track job applications in one place instead of a spreadsheet. The core feature is auto-parsing: users paste a job posting URL or forward a job application confirmation email, and the app auto-extracts the company name, role, and date instead of manual data entry. Users manage applications through a kanban-style pipeline (Applied → In Review → Interview → Offer / Rejected / Ghosted) and get follow-up reminders when an application has been sitting too long without an update.
+
+TECH STACK:
+- Backend: NestJS, TypeScript, Prisma ORM, PostgreSQL, JWT auth (access + refresh tokens), class-validator for DTOs, @nestjs/schedule for cron jobs
+- Frontend: Next.js (App Router), TypeScript, TailwindCSS, @dnd-kit/core for drag and drop
+- Both connected via a REST API
+
+DATA MODEL:
+User: id, email, password (hashed with bcrypt), name, createdAt
+Application: id, userId (FK), company, role, source (enum: linkedin, indeed, referral, company_site, other), jobUrl (nullable), status (enum: applied, in_review, interview, offer, rejected, ghosted), appliedDate, lastFollowUpDate (nullable), notes (text, nullable), createdAt, updatedAt
+
+BACKEND REQUIREMENTS (NestJS):
+1. auth module: register, login, JWT access + refresh token flow, password hashing, guards for protected routes
+2. users module: get current user profile, update profile
+3. applications module: full CRUD (create, list with filters by status, get by id, update, delete), DTOs with validation, ownership check (user can only access their own applications)
+4. parsing module:
+   - URL parsing endpoint: accepts a job URL, fetches the page server-side, tries to extract JobPosting structured data from <script type="application/ld+json"> tags first, falls back to scraping meta tags/title with cheerio if no structured data exists, returns extracted company/role/date
+   - Email parsing endpoint: accepts raw forwarded email text, extracts company name, role, and applied date using pattern/regex matching on common phrasings like "thank you for applying to [role] at [company]"
+5. reminders module: a daily cron job that finds applications with status "applied" or "in_review" where lastFollowUpDate (or appliedDate if null) is more than 7 days old, and marks them as needing follow-up (add a needsFollowUp boolean field, expose via a GET endpoint the frontend can poll)
+6. Prisma schema file for the full data model
+7. Proper error handling, input validation, and a .env.example file listing required environment variables
+
+FRONTEND REQUIREMENTS (Next.js App Router):
+1. /login and /register pages with form validation and JWT token storage (httpOnly cookie approach, not localStorage)
+2. /dashboard: kanban board with columns for each status, drag and drop cards between columns to update status (calls the backend PATCH endpoint on drop), shows a "needs follow up" badge on relevant cards
+3. /dashboard/applications/new: form to add an application manually, with a "paste job URL" input that calls the parsing endpoint and auto-fills company/role fields, and a separate "paste email text" textarea that does the same via email parsing
+4. /dashboard/applications/[id]: detail view to see and edit full application info, update notes, change status manually, mark follow-up sent
+5. Clean, minimal, professional dashboard design, not a generic AI-template look, use a focused neutral color palette with one accent color, good spacing and typography
+6. API client layer (fetch wrapper or axios instance) that handles auth tokens and talks to the NestJS backend
+
+DELIVERABLES:
+- Full Prisma schema
+- Full NestJS backend code, organized by module (auth, users, applications, parsing, reminders), including controllers, services, DTOs, and the app module wiring
+- Full Next.js frontend code, organized by route, including components, the API client, and Tailwind styling
+- A README explaining how to set up the database, run migrations, set environment variables, and run both frontend and backend locally
+
+Write everything as real, complete, working code. Explain key architecture decisions briefly as comments in the code where non-obvious. If the full app is too large for one response, tell me clearly what you're giving me first and what's coming next, and continue automatically until the full app is delivered.
